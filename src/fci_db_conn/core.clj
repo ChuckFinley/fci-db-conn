@@ -27,8 +27,11 @@
 	 :V :comments
 	 :W :questions})
 	 
-(defn pipe [value & fns]
-	(reduce (fn [acc cur] (cur acc)) value fns))
+(def derived-fields
+	[:year
+	 :position
+	 :chick-id
+	 :age])
 
 (defn get-year [row dataset]
 	(+ 1900 (.getYear (:measured row))))
@@ -43,17 +46,24 @@
 (defn get-chick-id [row dataset]
 	(str (:year row) "_" (:nest row) "-" (:position row)))
 	
-(defn fn-mapper [k f]
-	(fn [dataset] (map (fn [row] (assoc row k (f row dataset))) dataset)))
+(defn get-age [row dataset]
+	(if-let [hatched (:hatched row)]
+		(date-diff hatched (:measured row))))
+
+(defn getter [field]
+	(->> field name (str "get-") symbol resolve))
+	
+(defn calc-derived-field [dataset field]
+	(map (fn [row] (assoc row field ((getter field) row dataset))) dataset))
+	
+(defn calc-all-derived-fields [dataset fields]
+	(reduce calc-derived-field dataset fields))
 	 
 (defn get-data [file]
 	(let [raw-data (->> (xl/load-workbook file)
 						 (xl/select-sheet "Sheet1")
 						 (xl/select-columns raw-data-cols)
 						 (drop 1))]
-		(pipe raw-data
-			(fn-mapper :position get-position)
-			(fn-mapper :year get-year)
-			(fn-mapper :chick-id get-chick-id))))
+		(calc-all-derived-fields raw-data derived-fields)))
 		 
 ;(get-data (last chick-files))
