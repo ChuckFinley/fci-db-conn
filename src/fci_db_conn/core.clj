@@ -36,12 +36,13 @@
 (defn get-year [row dataset]
 	(+ 1900 (.getYear (:measured row))))
 	
-(defn get-position [row dataset]
-	(let [pos (:position row)]
-		(case pos
-			java.lang.String pos
-			java.lang.Double (int pos)
-			(type pos))))
+(defmulti get-position (fn [row dataset] (type (:position row))))
+
+(defmethod get-position java.lang.Double [row dataset]
+	(int (:position row)))
+
+(defmethod get-position java.lang.String [row dataset]
+	(:position row))
 
 (defn get-chick-id [row dataset]
 	(str (:year row) "_" (:nest row) "-" (:position row)))
