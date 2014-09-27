@@ -1,7 +1,7 @@
 (ns fci-db-conn.core
 	(:require [dk.ative.docjure.spreadsheet :as xl])
 	(:import (org.apache.poi.ss.usermodel Cell)
-			 (java.util.Date)))
+			 (java.util Date concurrent.TimeUnit)))
 
 ; Handle error cells when reading columns
 (defmethod xl/read-cell Cell/CELL_TYPE_ERROR [^Cell cell] nil)
@@ -45,6 +45,9 @@
 
 (defn get-chick-id [row dataset]
 	(str (:year row) "_" (:nest row) "-" (:position row)))
+
+(defn date-diff [d1 d2]
+	(.convert TimeUnit/DAYS (- (.getTime d2) (.getTime d1)) TimeUnit/MILLISECONDS))
 	
 (defn get-age [row dataset]
 	(if-let [hatched (:hatched row)]
