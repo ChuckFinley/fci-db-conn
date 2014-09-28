@@ -33,7 +33,8 @@
 	 :chick-id
 	 :age
 	 :fate-date
-	 :fate-age])
+	 :fate-age
+	 :peak-weight])
 	 
 (defn chick-data [row dataset]
 	(filter #(= (:chick-id row) (:chick-id %)) dataset))
@@ -65,6 +66,10 @@
 (defn get-fate-age [row dataset]
 	(let [ages (map :age (chick-data row dataset))]
 		(last ages)))
+		
+(defn get-peak-weight [row dataset]
+	(if-let [weights (seq (filter identity (map :weight (chick-data row dataset))))]
+		(apply max weights)))
 
 (defn getter [field]
 	(->> field name (str "get-") symbol resolve))
