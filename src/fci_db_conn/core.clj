@@ -35,7 +35,8 @@
 	 :fate-date
 	 :fate-age
 	 :peak-weight
-	 :fledge-weight])
+	 :fledge-weight
+	 :peak-wing])
 	 
 (defn chick-data [row dataset]
 	(filter #(= (:chick-id row) (:chick-id %)) dataset))
@@ -75,6 +76,10 @@
 (defn get-fledge-weight [row dataset]
 	(if-let [weights (seq (filter identity (map :weight (chick-data row dataset))))]
 		(if (= (:fate row) "Fledge") (last weights))))
+		
+(defn get-peak-wing [row dataset]
+	(if-let [wings (seq (filter identity (map :wing (chick-data row dataset))))]
+		(apply max wings)))
 
 (defn getter [field]
 	(->> field name (str "get-") symbol resolve))
