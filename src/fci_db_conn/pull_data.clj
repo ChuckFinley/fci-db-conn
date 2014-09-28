@@ -10,82 +10,82 @@
 (def chick-files (filter #(.contains % "\\April 2013 recovery") (map str (file-seq chick-dir))))
 
 (def raw-data-cols
-	{:D :type
-	 :E :old-nest
-	 :F :nest
-	 :G :position
-	 :H :hatched
-	 :I :measured
-	 :K :wing
-	 :L :weight
-	 :P :end-cndtn
-	 :Q :fate
-	 :R :fate-cause
-	 :S :day-cndtn
-	 :T :band-no
-	 :U :cohort-no
-	 :V :comments
-	 :W :questions})
+	{:D :Type
+	 :E :OldNest
+	 :F :Nest
+	 :G :Position
+	 :H :Hatched
+	 :I :Measured
+	 :K :Wing
+	 :L :Weight
+	 :P :EndCndtn
+	 :Q :Fate
+	 :R :FateCause
+	 :S :DayCndtn
+	 :T :BandNo
+	 :U :CohortNo
+	 :V :Comments
+	 :W :Questions})
 	 
 (def derived-fields
-	[:year
-	 :position
-	 :chick-id
-	 :age
-	 :fate-date
-	 :fate-age
-	 :peak-weight
-	 :fledge-weight
-	 :peak-wing
-	 :measurement-id])
+	[:Year
+	 :Position
+	 :ChickId
+	 :Age
+	 :MaxMeasured
+	 :MaxAge
+	 :PeakWeight
+	 :FledgeWeight
+	 :PeakWing
+	 :MeasurementId])
 	
 (def sdf (SimpleDateFormat. "yyyy-MM-dd"))
 	 
 (defn chick-data [row dataset]
-	(filter #(= (:chick-id row) (:chick-id %)) dataset))
+	(filter #(= (:ChickId row) (:ChickId %)) dataset))
 
-(defn get-year [row dataset]
-	(+ 1900 (.getYear (:measured row))))
+(defn get-Year [row dataset]
+	(+ 1900 (.getYear (:Measured row))))
 	
-(defmulti get-position (fn [row dataset] (type (:position row))))
+(defmulti get-Position (fn [row dataset] (type (:Position row))))
 
-(defmethod get-position java.lang.Double [row dataset]
-	(int (:position row)))
+(defmethod get-Position java.lang.Double [row dataset]
+	(int (:Position row)))
 
-(defmethod get-position java.lang.String [row dataset]
-	(:position row))
+(defmethod get-Position java.lang.String [row dataset]
+	(:Position row))
 
-(defn get-chick-id [row dataset]
-	(str (:year row) "_" (:nest row) "-" (:position row)))
+(defn get-ChickId [row dataset]
+	(str (:Year row) "_" (:Nest row) "-" (:Position row)))
 	
-(defn get-age [row dataset]
+(defn get-Age [row dataset]
 	(letfn [(date-diff [d1 d2] 
 		(.convert TimeUnit/DAYS (- (.getTime d2) (.getTime d1)) TimeUnit/MILLISECONDS))]
-		(if-let [hatched (:hatched row)]
-			(date-diff hatched (:measured row)))))
+		(if-let [hatched (:Hatched row)]
+			(+ 1 (date-diff hatched (:Measured row))))))
 			
-(defn get-fate-date [row dataset]
-	(let [dates (map :measured (chick-data row dataset))]
+(defn get-MaxMeasured [row dataset]
+	(let [dates (map :Measured (chick-data row dataset))]
 		(last dates)))
 		
-(defn get-fate-age [row dataset]
-	(let [ages (map :age (chick-data row dataset))]
+(defn get-MaxAge [row dataset]
+	(let [ages (map :Age (chick-data row dataset))]
 		(last ages)))
 		
-(defn get-peak-weight [row dataset]
-	(if-let [weights (seq (filter identity (map :weight (chick-data row dataset))))]
+(defn get-PeakWeight [row dataset]
+	(if-let [weights (seq (filter identity (map :Weight (chick-data row dataset))))]
 		(apply max weights)))
 		
-(defn get-fledge-weight [row dataset]
-	(if-let [weights (seq (filter identity (map :weight (chick-data row dataset))))]
-		(if (= (:fate row) "Fledge") (last weights))))
+(defn get-FledgeWeight [row dataset]
+	(if-let [weights (seq (filter identity (map :Weight (chick-data row dataset))))]
+		(if (= (:Fate row) "Fledge") (last weights))))
 		
-(defn get-peak-wing [row dataset]
-	(if-let [wings (seq (filter identity (map :wing (chick-data row dataset))))]
+(defn get-PeakWing [row dataset]
+	(if-let [wings (seq (filter identity (map :Wing (chick-data row dataset))))]
 		(apply max wings)))
 		
-(defn get-measurement-id [row dataset]
-	(str (.format sdf (:measured row)) "_" (:chick-id row)))
+(defn get-MeasurementId [row dataset]
+	(str (.format sdf (:Measured row)) "_" (:ChickId row)))
 
 (defn getter [field]
 	(->> field name (str "get-") symbol (ns-resolve 'fci-db-conn.pull-data)))
@@ -98,7 +98,7 @@
 	 
 (defn get-data [file]
 	(let [raw-data (->> (xl/load-workbook file)
-						 (xl/select-sheet "Sheet1")
-						 (xl/select-columns raw-data-cols)
-						 (drop 1))]
+						(xl/select-sheet "Sheet1")
+						(xl/select-columns raw-data-cols)
+						(drop 1))]
 		(calc-all-derived-fields raw-data derived-fields)))
