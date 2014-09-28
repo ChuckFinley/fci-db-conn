@@ -46,13 +46,12 @@
 
 (defn get-chick-id [row dataset]
 	(str (:year row) "_" (:nest row) "-" (:position row)))
-
-(defn date-diff [d1 d2]
-	(.convert TimeUnit/DAYS (- (.getTime d2) (.getTime d1)) TimeUnit/MILLISECONDS))
 	
 (defn get-age [row dataset]
-	(if-let [hatched (:hatched row)]
-		(date-diff hatched (:measured row))))
+	(letfn [(date-diff [d1 d2] 
+		(.convert TimeUnit/DAYS (- (.getTime d2) (.getTime d1)) TimeUnit/MILLISECONDS))]
+		(if-let [hatched (:hatched row)]
+			(date-diff hatched (:measured row)))))
 
 (defn getter [field]
 	(->> field name (str "get-") symbol resolve))
