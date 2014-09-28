@@ -31,7 +31,11 @@
 	[:year
 	 :position
 	 :chick-id
-	 :age])
+	 :age
+	 :fate-date])
+	 
+(defn chick-data [row dataset]
+	(filter #(= (:chick-id row) (:chick-id %)) dataset))
 
 (defn get-year [row dataset]
 	(+ 1900 (.getYear (:measured row))))
@@ -52,6 +56,10 @@
 		(.convert TimeUnit/DAYS (- (.getTime d2) (.getTime d1)) TimeUnit/MILLISECONDS))]
 		(if-let [hatched (:hatched row)]
 			(date-diff hatched (:measured row)))))
+			
+(defn get-fate-date [row dataset]
+	(let [dates (map :measured (chick-data row dataset))]
+		(last dates)))
 
 (defn getter [field]
 	(->> field name (str "get-") symbol resolve))
