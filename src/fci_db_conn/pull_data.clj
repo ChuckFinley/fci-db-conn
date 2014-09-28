@@ -1,7 +1,7 @@
 (ns fci-db-conn.pull-data
 	(:require [dk.ative.docjure.spreadsheet :as xl])
 	(:import (org.apache.poi.ss.usermodel Cell)
-			 (java.util Date concurrent.TimeUnit)))
+			 (java util.Date util.concurrent.TimeUnit text.SimpleDateFormat)))
 
 ; Handle error cells when reading columns
 (defmethod xl/read-cell Cell/CELL_TYPE_ERROR [^Cell cell] nil)
@@ -36,7 +36,10 @@
 	 :fate-age
 	 :peak-weight
 	 :fledge-weight
-	 :peak-wing])
+	 :peak-wing
+	 :measurement-id])
+	
+(def sdf (SimpleDateFormat. "yyyy-MM-dd"))
 	 
 (defn chick-data [row dataset]
 	(filter #(= (:chick-id row) (:chick-id %)) dataset))
@@ -80,6 +83,9 @@
 (defn get-peak-wing [row dataset]
 	(if-let [wings (seq (filter identity (map :wing (chick-data row dataset))))]
 		(apply max wings)))
+		
+(defn get-measurement-id [row dataset]
+	(str (.format sdf (:measured row)) "_" (:chick-id row)))
 
 (defn getter [field]
 	(->> field name (str "get-") symbol (ns-resolve 'fci-db-conn.pull-data)))
