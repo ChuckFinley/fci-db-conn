@@ -9,17 +9,34 @@
 	 :db   "fcidb"})
 
 (defn db-conn [user password]
-	(defdb fcidb (mysql(assoc dbparams :user user :password password))))
+	(do
+		(println "Connecting to" (:host dbparams))
+		(defdb fcidb (mysql (assoc dbparams :user user :password password)))))
 
 (defn date-to-string [date]
 	(if (identity date) (.format sdf date)))
 	
 (defentity Chicks
-	(transform (fn [{:keys [Hatched Measured MaxMeasured] :as chick}]
-		(assoc chick 
-			:Hatched (date-to-string Hatched)
-			:Measured (date-to-string Measured)
-			:MaxMeasured (date-to-string MaxMeasured)))))
+	(transform (fn [chick]
+		(update-in chick [:Hatched :Measure :MaxMeasured] date-to-string))))
+
+(defn clear-data []
+	(do
+		(println "Deleting existing data")
+		(delete Chicks)))
 
 (defn insert-dataset [dataset]
-	(insert Chicks (values dataset)))
+	(do
+		(println "Inserting" (count dataset) "rows for" (->> dataset first :Year))
+		(insert Chicks (values dataset))))
+		
+(defn try-insert-row [row]
+	(try
+		(insert Chicks (values row))
+	(catch Exception e
+		(println *e))))
+		
+(defn try-insert-dataset [dataset]
+	(do
+		(println "Inserting" (count dataset) "rows for" (->> dataset first :Year))
+		(map try-insert-row dataset)))
